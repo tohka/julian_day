@@ -1,11 +1,11 @@
 # julian_day
 
-## 概要
-ユリウス日を扱うための Ruby のクラス。
+## DESCRIPTION
+A library for use julian day.
 
-## 動作条件
-Ruby 1.9 以上
+## REQUIREMENTS
+Ruby 1.9 or over
 
-## ライセンス
-MIT ライセンス
+## LICENSE
+MIT License
 
