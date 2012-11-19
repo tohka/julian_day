@@ -1,3 +1,7 @@
+if RUBY_VERSION < '1.9'
+	require 'rational'
+end
+
 class JulianDay
 	GREGORIAN = 0
 	JULIAN    = 1
@@ -50,7 +54,7 @@ class JulianDay
 	#       {#at_time} を用います。
 	#   * Time で与えるとその日時で生成します。
 	#   * Array で与えると [year = 2000, month = 1, day = 1,
-	#       hour = 0, min = 0, sec = 0, nsec = 0, tz_offset = 0] と
+	#       hour = 0, min = 0, sec = 0, usec = 0, tz_offset = 0] と
 	#       処理します。ただし各要素は整数とみなします。
 	#       +day+ は 0 を取ることができ、前月末日とみなされます。
 	#       +tz_offset+ は分単位の時差で東が正です。
@@ -87,14 +91,14 @@ class JulianDay
 		if julian_day.kind_of?(self.class)
 			@jdn  = julian_day.jdn
 			@sec  = julian_day.sec
-			@nsec = julian_day.nsec
+			@usec = julian_day.usec
 			julian_day.julian? ? julian : gregorian
 		elsif julian_day.kind_of?(Numeric)
 			julian_day = Rational(julian_day) + Rational(1, 2)
 			@jdn  = julian_day.floor
 			sec   = (julian_day - @jdn) * 86400
 			@sec  = sec.floor
-			@nsec = ((sec - @sec) * 1000000000).round
+			@usec = ((sec - @sec) * 1000000).round
 		else
 			raise TypeError
 		end
@@ -119,7 +123,7 @@ class JulianDay
 	#       コンストラクタと異なります。
 	#       なお、時間は協定世界時です。
 	#   * Array で与えると [year = 2000, month = 1, day = 1,
-	#       hour = 0, min = 0, sec = 0, nsec = 0, tz_offset = 0] と
+	#       hour = 0, min = 0, sec = 0, usec = 0, tz_offset = 0] と
 	#       処理します。ただし各要素は整数とみなします。
 	#       +day+ は 0 を取ることができ、前月末日とみなされます。
 	#       +tz_offset+ は分単位の時差で東が正です。
@@ -135,7 +139,7 @@ class JulianDay
 		if time.kind_of?(Time)
 			time.utc
 			at_time([time.year, time.month, time.day,
-					time.hour, time.min, time.sec, time.nsec], false)
+					time.hour, time.min, time.sec, time.usec], false)
 		elsif time.kind_of?(Numeric)
 			# epoch of unix time
 			# 2440587.5 (1970-01-01 00:00:00Z)
@@ -147,14 +151,14 @@ class JulianDay
 			hour   = time[3].to_i
 			min    = time[4].to_i
 			sec    = time[5].to_i
-			nsec   = time[6].to_i
+			usec   = time[6].to_i
 			offset = time[7].to_i
 			raise RangeError unless (1 .. 12).include?(month)
 			raise RangeError unless (0 .. 31).include?(day)
 			raise RangeError unless (0 .. 23).include?(hour)
 			raise RangeError unless (0 .. 59).include?(min)
 			raise RangeError unless (0 .. 60).include?(sec)
-			raise RangeError unless (0 .. 999999999).include?(nsec)
+			raise RangeError unless (0 .. 999999).include?(usec)
 			raise RangeError unless (-1080 .. 1080).include?(offset)
 
 			is_julian = julian? if is_julian.nil?
@@ -174,7 +178,7 @@ class JulianDay
 						((153 * m + 2) / 5) + day - 32045
 			end
 			@sec = 3600 * hour + 60 * min + sec
-			@nsec = nsec
+			@usec = usec
 			
 			# day = 0 のときは 1 を引く
 			@jdn -= 1 if is_day_zero
@@ -206,7 +210,7 @@ class JulianDay
 	#   * Numeric で指定した値は unix time とみなされる点が
 	#       {#initialize コンストラクタ}と異なります。
 	#   * Array で与えると [year = 2000, month = 1, day = 1,
-	#       hour = 0, min = 0, sec = 0, nsec = 0, tz_offset = 0] と
+	#       hour = 0, min = 0, sec = 0, usec = 0, tz_offset = 0] と
 	#       処理します。ただし各要素は整数とみなします。
 	#       +day+ は 0 を取ることができ、前月末日とみなされます。
 	#       +tz_offset+ は分単位の時差で東が正です。
@@ -225,7 +229,7 @@ class JulianDay
 	#
 	# @param [Integer] tz_offset 時差。
 	#   東が正で、分単位です。日本標準時は 540 になります。
-	# @return [Array] 年、月、日、時、分、秒、ナノ秒、時差からなる配列。
+	# @return [Array] 年、月、日、時、分、秒、マイクロ秒、時差からなる配列。
 	# @raise [TypeError] 引数が想定していない型のとき。
 	# @raise [RangeError] +tz_offset+ が前後 18 時間の範囲内にないとき。
 	def datetime(tz_offset = 0)
@@ -285,7 +289,7 @@ class JulianDay
 		end
 
 		h = t.sec / 3600
-		[y, m, d, h, (t.sec - 3600 * h) / 60, t.sec % 60, t.nsec, tz_offset]
+		[y, m, d, h, (t.sec - 3600 * h) / 60, t.sec % 60, t.usec, tz_offset]
 	end
 
 	# {#to_r} のエイリアス
@@ -319,11 +323,11 @@ class JulianDay
 		@sec
 	end
 
-	# 秒以下の端数をナノ秒として整数で返します。
+	# 秒以下の端数をマイクロ秒として整数で返します。
 	#
-	# @return [Integer] 秒以下のナノ秒。
-	def nsec
-		@nsec
+	# @return [Integer] 秒以下のマイクロ秒。
+	def usec
+		@usec
 	end
 
 	# {#jdn} のエイリアス。
@@ -347,14 +351,14 @@ class JulianDay
 	# @return [Rational] ユリウス日。
 	def to_r
 		Rational(@jdn) - Rational(1, 2) + Rational(@sec, 86400) +
-				Rational(@nsec, 86400000000000)
+				Rational(@usec, 86400000000)
 	end
 
 	# ユリウス日を文字列で返します。
 	#
 	# @return [String] ユリウス日。
 	def to_s
-		# ナノ秒は小数点以下 18 桁くらいあれば表現できる
+		# マイクロ秒は小数点以下 15 桁くらいあれば表現できる
 		# ここでは 24 桁まで出力する
 		r = jd
 		str = r < 0 ? "-" : ""
@@ -377,8 +381,8 @@ class JulianDay
 	# unix time を浮動小数点数で返します。
 	#
 	# @return [Float] unix time 。
-	def unix_time
-		(@jdn - 2440588) * 86400 + @sec + @nsec / 1000000000.0
+	def to_unix_time
+		(@jdn - 2440588) * 86400 + @sec + @usec / 1000000.0
 	end
 
 	# Time オブジェクトを返します。
@@ -387,7 +391,7 @@ class JulianDay
 	# @raise Time の取り得ることのできない日時(環境依存)。
 	def to_time
 		time = (@jdn - 2440588) * 86400 + @sec
-		Time.at(time, @nsec / 1000)
+		Time.at(time, @usec)
 	end
 
 	# J2000 からの経過ユリウス世紀を返します。
@@ -492,15 +496,6 @@ class JulianDay
 			jd == other.jd
 		elsif other.kind_of?(Numeric)
 			jd == other
-		else
-			raise TypeError
-		end
-	end
-	def !=(other)
-		if other.kind_of?(self.class)
-			jd != other.jd
-		elsif other.kind_of?(Numeric)
-			jd != other
 		else
 			raise TypeError
 		end
