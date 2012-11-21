@@ -66,13 +66,17 @@ class JulianDay
 	# @raise [TypeError] 引数が想定していない型のとき。
 	# @raise [RangeError] +arg+ が配列のとき、各要素値が範囲内にないとき。
 	def initialize(arg = nil, is_julian = false)
-		is_julian ? julian : gregorian
-		
 		if arg.nil?
+			is_julian ? julian : gregorian
+			at_time(Time.now)
+		elsif arg.kind_of?(TrueClass) || arg.kind_of?(FalseClass)
+			arg ? julian : gregorian
 			at_time(Time.now)
 		elsif arg.kind_of?(self.class) || arg.kind_of?(Numeric)
+			is_julian ? julian : gregorian
 			at(arg)
 		elsif arg.kind_of?(Time) || arg.kind_of?(Array)
+			is_julian ? julian : gregorian
 			at_time(arg)
 		else
 			raise TypeError
