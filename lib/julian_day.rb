@@ -21,7 +21,6 @@ class JulianDay
 	ACST =  570 # オーストラリア中部標準時 (UTC+9:30)
 	JST  =  540 # 日本標準時
 	AWST =  480 # オーストラリア西部標準時
-	# CST  =  480 # 中国標準時
 	IST  =  330 # インド標準時 (UTC+5:30)
 	MSK  =  240 # モスクワ標準時
 	EEST =  180 # 東部ヨーロッパ夏時間
@@ -232,7 +231,9 @@ class JulianDay
 	# @return [Array] 年、月、日、時、分、秒、マイクロ秒、時差からなる配列。
 	# @raise [TypeError] 引数が想定していない型のとき。
 	# @raise [RangeError] +tz_offset+ が前後 18 時間の範囲内にないとき。
-	def datetime(tz_offset = 0)
+	def datetime(tz_offset = 0, is_julian = nil)
+		is_julian = julian? if is_julian.nil?
+
 		if tz_offset.kind_of?(Integer)
 			raise RangeError unless (-1080 .. 1080).include?(tz_offset)
 		else
@@ -242,7 +243,7 @@ class JulianDay
 		t = self + Rational(tz_offset, 1440)
 		y = -4800
 		m = d = 1
-		if julian?
+		if is_julian
 			# -4800/03/00 からの通日
 			days = t.jdn + 32083
 			y += 4 * (days / 1461)
