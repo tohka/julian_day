@@ -192,7 +192,7 @@ puts JulianDay.new - JulianDay.new([2000, 1, 1, 12, 0, 0])
 *    `JulianDay#<=>other)`
 
 ## 暦のモード
-第二引数を省略した `JulianDay#at_time(array)` `JulianDay#datetime(tz_offset)` や、 `JulianDay#=time(array)` では、そのときの暦モードに従ってユリウス暦かグレゴリオ暦のどちらかとみなして処理を行います。
+第二引数を省略した `JulianDay#at_time(array)` `JulianDay#datetime(tz_offset)` や、 `JulianDay#time=(array)` では、そのときの暦モードに従ってユリウス暦かグレゴリオ暦のどちらかとみなして処理を行います。
 
 ```ruby
 jd = JulianDay.new
